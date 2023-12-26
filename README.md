@@ -6,7 +6,8 @@ Simple debugger for php
 
 ## Requirements
 
-- PHP 5.5+ to 8.0
+- PHP 7.1+
+- (PHP 5.5 - 8.0 version 0.86 and lower)
 
 ## Usage
 
