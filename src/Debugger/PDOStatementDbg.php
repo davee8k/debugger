@@ -2,8 +2,8 @@
 
 namespace Debugger;
 
-use PDOStatement,
-	PDOException;
+use PDOStatement;
+use PDOException;
 
 /**
  * SQL logging for debugger

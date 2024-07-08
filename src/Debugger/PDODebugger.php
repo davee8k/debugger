@@ -2,6 +2,7 @@
 
 namespace Debugger;
 
+use PDOStatement;
 use PDO;
 
 /**
@@ -22,15 +23,16 @@ class PDODebugger extends PDO {
 
 	/**
 	 * @param string $statement
-	 * @return int
+	 * @return int|false
 	 */
 	public function exec (string $statement) {
-		return $this->query($statement)->rowCount();
+		$req = $this->query($statement);
+		return $req ? $req->rowCount() : false;
 	}
 
 	/**
 	 * @param string $statement
-	 * @return bool|PDOStatement
+	 * @return PDOStatement|false
 	 */
 	public function query (string $statement) {
 		$args = func_get_args();

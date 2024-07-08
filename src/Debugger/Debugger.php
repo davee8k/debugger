@@ -2,14 +2,14 @@
 
 namespace Debugger;
 
-use Throwable,
-	PDOException;
+use Throwable;
+use PDOException;
 
 /**
  * Simple debugger PHP 7.1+
  *
  * @author DaVee
- * @version 0.87
+ * @version 0.87.1
  * @license https://unlicense.org/
  */
 class Debugger {
@@ -52,7 +52,7 @@ class Debugger {
 	private static $query = [];
 	/** @var array<string, string|int>|null */
 	private static $runtimeError = null;
-	/** @var array<string, mixed>|null */
+	/** @var array<int, mixed>|null */
 	private static $memory = null;
 	/** @var array<string, mixed> */
 	private static $attachments = [];
@@ -91,6 +91,14 @@ class Debugger {
 					(filter_input(INPUT_SERVER, 'HTTP_HOST') ?: filter_input(INPUT_SERVER, 'SERVER_NAME')).
 					filter_input(INPUT_SERVER, 'REQUEST_URI');
 		 }
+	}
+
+	/**
+	 * Get working directory
+	 * @return string|null
+	 */
+	public static function getDir (): ?string {
+		return self::$dir;
 	}
 
 	/**
@@ -215,7 +223,7 @@ class Debugger {
 	 * @param string $errstr
 	 * @param string|null $errfile
 	 * @param int|null $errline
-	 * @param array|null $errcontext
+	 * @param array<string, mixed>|null $errcontext
 	 * @return null
 	 */
 	public static function handleError (int $errno, string $errstr, string $errfile = null, int $errline = null, array $errcontext = null) {
@@ -323,8 +331,8 @@ class Debugger {
 		if (count($trace) > 1) {
 			foreach ($trace as $debug) {
 				if (isset($debug['file']) && (!isset($debug['class']) || $debug['class'] != get_called_class())) {
-					echo "<li>in ".self::formatFileName($debug['file'])." on line <b>".$debug['line']."</b> at <i>".
-						($debug['class'] ?? '').($debug['type'] ?? '').$debug['function']."()</i></li>\n";
+					echo "<li>in ".self::formatFileName($debug['file']).(isset($debug['line']) ? " on line <b>".$debug['line']."</b>" : '').
+						" at <i>".($debug['class'] ?? '').($debug['type'] ?? '').$debug['function']."()</i></li>\n";
 				}
 			}
 		}
@@ -432,9 +440,9 @@ class Debugger {
 		$text .= self::getTable('FILES', $_FILES);
 		$text .= self::getTable('COOKIE', $_COOKIE);
 		$text .= self::getTable('SESSION', $_SESSION ?? []);
-		$text .= self::getTable('REQUEST', self::getRequestHeaders());
-		$text .= self::getTable('RESPONSE', self::getResponseHeaders());
-		$text .= self::getTable('SERVER', $_SERVER);
+		$text .= self::getTable('REQUEST', static::getRequestHeaders());
+		$text .= self::getTable('RESPONSE', static::getResponseHeaders());
+		$text .= self::getTable('SERVER', static::getServerData());
 		$array['vars']['TEXT'] = $text;
 
 		// total time
@@ -447,7 +455,7 @@ class Debugger {
 	 * Returns request headers if possible
 	 * @return string[]
 	 */
-	private static function getRequestHeaders (): array {
+	protected static function getRequestHeaders (): array {
 		if (is_callable('apache_request_headers')) return apache_request_headers();
 		return ['UNDEF'];
 	}
@@ -456,7 +464,7 @@ class Debugger {
 	 * Returns response headers
 	 * @return string[]
 	 */
-	private static function getResponseHeaders (): array {
+	protected static function getResponseHeaders (): array {
 		if (is_callable('apache_response_headers')) return apache_response_headers();
 		$arr = [];
 		$headers = headers_list();
@@ -465,6 +473,14 @@ class Debugger {
 			$arr[array_shift($header)] = trim(implode(':', $header));
 		}
 		return $arr;
+	}
+
+	/**
+	 * Returns basic server info
+	 * @return array<string, string>
+	 */
+	protected static function getServerData (): array {
+		return $_SERVER;
 	}
 
 	/**
@@ -532,8 +548,11 @@ class Debugger {
 	 */
 	private static function exceptionFileExists (string $hash): bool {
 		if (self::$dir) {
-			foreach (scandir(self::$dir) as $file) {
-				if (preg_match('/^'.preg_quote(self::$file).'_[0-9\-]+_'.$hash.'\.html$/', $file)) return true;
+			$list = scandir(self::$dir);
+			if (!empty($list)) {
+				foreach ($list as $file) {
+					if (preg_match('/^'.preg_quote(self::$file).'_[0-9\-]+_'.$hash.'\.html$/', $file)) return true;
+				}
 			}
 		}
 		return false;

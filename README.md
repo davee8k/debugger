@@ -20,4 +20,3 @@ Simple debugger for php
 ## Logging SQL requests
 
 	Use PDO extension class \Debugger\PDODebugger
-
