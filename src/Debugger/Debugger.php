@@ -1,4 +1,5 @@
-<?php declare(strict_types=1);
+<?php
+declare(strict_types=1);
 
 namespace Debugger;
 
@@ -12,7 +13,8 @@ use PDOException;
  * @version 0.87.1
  * @license https://unlicense.org/
  */
-class Debugger {
+class Debugger
+{
 	/** @var string */
 	public static $session = 'rs-debugger';
 	/** @var string[] */
@@ -62,7 +64,8 @@ class Debugger {
 	 * @param string|null $dir
 	 * @param int|null $level
 	 */
-	public function __construct ($work, string $dir = null, int $level = null) {
+	public function __construct($work, string $dir = null, int $level = null)
+	{
 		self::$time = filter_input(INPUT_SERVER, 'REQUEST_TIME_FLOAT', FILTER_VALIDATE_FLOAT) ?: microtime(true);
 		// load variables
 		self::$work = $work;
@@ -74,9 +77,9 @@ class Debugger {
 				if (self::$dir !== null) ini_set('error_log', self::$dir.'php_error.log');
 
 				error_reporting(is_null($level) ? -1 : $level);
-				ini_set('html_errors', 0);
-				ini_set('log_errors', 0);
-				ini_set('display_errors', 0);
+				ini_set('html_errors', '0');
+				ini_set('log_errors', '0');
+				ini_set('display_errors', '0');
 			}
 			set_exception_handler([__CLASS__, 'handlerException']);
 			set_error_handler([__CLASS__, 'handleError']);
@@ -97,7 +100,8 @@ class Debugger {
 	 * Get working directory
 	 * @return string|null
 	 */
-	public static function getDir (): ?string {
+	public static function getDir(): ?string
+	{
 		return self::$dir;
 	}
 
@@ -105,7 +109,8 @@ class Debugger {
 	 * Get work mode
 	 * @return string|bool
 	 */
-	public static function getWorkState () {
+	public static function getWorkState()
+	{
 		return self::$work;
 	}
 
@@ -115,7 +120,8 @@ class Debugger {
 	 * @param string|null $path
 	 * @throws Throwable
 	 */
-	public static function errorAccess (Throwable $e, ?string $path): void {
+	public static function errorAccess(Throwable $e, ?string $path): void
+	{
 		if (self::getWorkState() === true && !$e instanceof DebugException) throw $e;
 		self::log($e->getMessage().'. From '.getenv('REMOTE_ADDR').' in /'.$path, 'access');
 	}
@@ -124,7 +130,8 @@ class Debugger {
 	 * Set email address
 	 * @param string $email
 	 */
-	public static function setMail (string $email): void {
+	public static function setMail(string $email): void
+	{
 		self::$email = $email;
 	}
 
@@ -134,15 +141,17 @@ class Debugger {
 	 * @param string $name
 	 * @param string|null $content
 	 */
-	public static function addAttachment (string $mark, string $name, string $content = null): void {
-		self::$attachments[$mark] = ['NAME'=>$name, 'TEXT'=>$content];
+	public static function addAttachment(string $mark, string $name, string $content = null): void
+	{
+		self::$attachments[$mark] = ['NAME' => $name, 'TEXT' => $content];
 	}
 
 	/**
 	 * Disable debugger in html - turn to file work mode
 	 * @param bool $terminate
 	 */
-	public static function disable (bool $terminate = false): void {
+	public static function disable(bool $terminate = false): void
+	{
 		if ($terminate || self::$work === true) self::$email = null;
 		if (!$terminate && self::$work && self::$dir) self::$work = 'FILE';
 		else self::$work = false;
@@ -153,8 +162,11 @@ class Debugger {
 	 * @param string $message
 	 * @param string $file
 	 */
-	public static function log (string $message, string $file = 'error'): void {
-		if (self::$dir) error_log('['.@date('Y-m-d H:i:s').'] '.trim($message).' @ '.self::$url.PHP_EOL, 3, self::$dir.$file.'.log');
+	public static function log(string $message, string $file = 'error'): void
+	{
+		if (self::$dir) {
+			error_log('['.@date('Y-m-d H:i:s').'] '.trim($message).' @ '.self::$url.PHP_EOL, 3, self::$dir.$file.'.log');
+		}
 	}
 
 	/**
@@ -163,7 +175,8 @@ class Debugger {
 	 * @param int|null $rows
 	 * @param float $time
 	 */
-	public static function sql (string $query, ?int $rows, float $time): void {
+	public static function sql(string $query, ?int $rows, float $time): void
+	{
 		if (self::$work) {
 			list($where) = array_slice(debug_backtrace(), 2, 1);	// PHP 5.4 debug_backtrace()[2]
 			self::$query[] = [
@@ -180,7 +193,8 @@ class Debugger {
 	 * Load memory from session
 	 * @return mixed|null
 	 */
-	public static function loadMemory () {
+	public static function loadMemory()
+	{
 		if (filter_has_var(INPUT_COOKIE, self::$session) && self::getRequestMode() === 0) {
 			if (session_status() === PHP_SESSION_ACTIVE) session_write_close();
 
@@ -202,7 +216,8 @@ class Debugger {
 	/**
 	 * Save current debug into memory
 	 */
-	public static function saveMemory (): void {
+	public static function saveMemory(): void
+	{
 		if (!headers_sent()) {
 			if (session_status() === PHP_SESSION_ACTIVE) session_write_close();
 
@@ -226,7 +241,8 @@ class Debugger {
 	 * @param array<string, mixed>|null $errcontext
 	 * @return null
 	 */
-	public static function handleError (int $errno, string $errstr, string $errfile = null, int $errline = null, array $errcontext = null) {
+	public static function handleError(int $errno, string $errstr, string $errfile = null, int $errline = null, array $errcontext = null)
+	{
 		// 4437 - suppressed in php 8
 		if (self::$suppressed || ($errno & error_reporting()) === $errno) {
 			self::handlerException(new DebugException($errstr, $errno, $errfile, $errline));
@@ -238,7 +254,8 @@ class Debugger {
 	 * Handle exception based on mode
 	 * @param Throwable $e
 	 */
-	public static function handlerException (Throwable $e): void {
+	public static function handlerException(Throwable $e): void
+	{
 		if (self::$work !== true) {
 			self::log($e->getMessage().' ('.$e->getCode().') In '.$e->getFile().' at line '.$e->getLine());
 			if (self::$email) self::sendNotifyMail(self::$email, $e->getMessage());
@@ -273,8 +290,7 @@ class Debugger {
 				$fileName = self::$file.'_'.@date('Y-m-d-H-i-s').'_'.$errorHash.'.html';
 				file_put_contents(self::$dir.$fileName, ob_get_clean(), LOCK_EX);
 			}
-		}
-		else if (self::$work) {
+		} elseif (self::$work) {
 			if (!headers_sent()) {
 				header('Content-Type: text/html; charset=utf-8');
 				http_response_code(500);
@@ -287,10 +303,11 @@ class Debugger {
 	/**
 	 * Handle shutdown
 	 */
-	public static function handleShutDown (): void {
+	public static function handleShutDown(): void
+	{
 		$error = error_get_last();
 		if ($error !== null && (self::$work === true || self::$runtimeError !== $error)) {
-			$error += ['type'=>E_CORE_ERROR, 'file'=>'unknown file', 'line'=>0, 'message'=>'shutdown'];
+			$error += ['type' => E_CORE_ERROR, 'file' => 'unknown file', 'line' => 0, 'message' => 'shutdown'];
 			self::handlerException(new DebugException($error['message'], $error['type'], $error['file'], $error['line']));
 		}
 
@@ -307,7 +324,8 @@ class Debugger {
 	 * @param string $message
 	 * @return bool
 	 */
-	public static function sendNotifyMail (string $email, string $message): bool {
+	public static function sendNotifyMail(string $email, string $message): bool
+	{
 		$host = trim(filter_input(INPUT_SERVER, 'HTTP_HOST') ?: ( filter_input(INPUT_SERVER, 'SERVER_NAME') ?: gethostname() ), " .");
 		return mail($email,
 			"PHP error call from ".$host,
@@ -319,7 +337,8 @@ class Debugger {
 	 * Prints exception
 	 * @param Throwable $e
 	 */
-	public static function renderError (Throwable $e): void {
+	public static function renderError(Throwable $e): void
+	{
 		$trace = $e->getTrace();
 		if ($e instanceof PDOException) $trace = array_slice($trace, 2);
 ?>
@@ -345,7 +364,8 @@ class Debugger {
 	/**
 	 * Prints debugger status bar
 	 */
-	public static function renderDebugger (): void {
+	public static function renderDebugger(): void
+	{
 		$totalTime = microtime(true) - self::$time;
 ?>
 
@@ -386,11 +406,12 @@ class Debugger {
 	/**
 	 * Prints debugger line
 	 * @param array<string, array<string|int, mixed>> $data
-	 * @param int|null $i
+	 * @param int|null $num
 	 */
-	protected static function renderDebuggerLine (array $data, int $i = null): void {
-		foreach ($data as $key=>$row) {
-			$idMark = 'rs-debug-fixed-bar-'.$key.$i;
+	protected static function renderDebuggerLine(array $data, int $num = null): void
+	{
+		foreach ($data as $key => $row) {
+			$idMark = 'rs-debug-fixed-bar-'.$key.$num;
 
 			echo '	<div class="debug-tab">',(empty($row['TEXT']) ? $row['NAME'] :
 				'<span onclick="document.getElementById(\''.$idMark.'\').style.display=\'block\'">'.$row['NAME'].'</span>'),"\n";
@@ -413,14 +434,17 @@ class Debugger {
 	 * @param float $totalTime
 	 * @return array<string, array<string|int, mixed>>
 	 */
-	private static function getData (float $totalTime): array {
+	private static function getData(float $totalTime): array
+	{
 		$array = [];
 
 		// database
 		$array['sql']['NAME'] = 'SQL: no query';
 		if (!empty(self::$query)) {
 			$totalSQL = 0;
-			foreach (self::$query as $q) $totalSQL += $q['TIME'];
+			foreach (self::$query as $q) {
+				$totalSQL += $q['TIME'];
+			}
 			$array['sql']['NAME'] = 'SQL: '.self::formatTime($totalSQL).'ms / '.count(self::$query).' query';
 
 			$text = "<table><tr><th>Time [ms]</th><th>Request</th><th>Rows</th></tr>\n";
@@ -455,7 +479,8 @@ class Debugger {
 	 * Returns request headers if possible
 	 * @return string[]
 	 */
-	protected static function getRequestHeaders (): array {
+	protected static function getRequestHeaders(): array
+	{
 		if (is_callable('apache_request_headers')) return apache_request_headers();
 		return ['UNDEF'];
 	}
@@ -464,7 +489,8 @@ class Debugger {
 	 * Returns response headers
 	 * @return string[]
 	 */
-	protected static function getResponseHeaders (): array {
+	protected static function getResponseHeaders(): array
+	{
 		if (is_callable('apache_response_headers')) return apache_response_headers();
 		$arr = [];
 		$headers = headers_list();
@@ -479,7 +505,8 @@ class Debugger {
 	 * Returns basic server info
 	 * @return array<string, string>
 	 */
-	protected static function getServerData (): array {
+	protected static function getServerData(): array
+	{
 		return $_SERVER;
 	}
 
@@ -487,7 +514,8 @@ class Debugger {
 	 * Returns request mode
 	 * @return int
 	 */
-	private static function getRequestMode (): int {
+	private static function getRequestMode(): int
+	{
 		if (filter_input(INPUT_SERVER, 'HTTP_X_REQUESTED_WITH') === 'XMLHttpRequest') return 2;
 		foreach (headers_list() as $header) {
 			$h = trim($header);
@@ -503,9 +531,10 @@ class Debugger {
 	 * @param array<string, string> $array
 	 * @return string
 	 */
-	private static function getTable (string $name, array $array): string {
+	private static function getTable(string $name, array $array): string
+	{
 		$text = "<table>\n".'<caption>'.$name."</caption>\n";
-		foreach ($array as $key=>$val) {
+		foreach ($array as $key => $val) {
 			$text .= '<tr><td>'.$key.'</td><td>'.htmlspecialchars(print_r($val, true), ENT_QUOTES)."</td></tr>\n";
 		}
 		return $text.'</table>'."\n";
@@ -516,7 +545,8 @@ class Debugger {
 	 * @param string $filePath
 	 * @return string
 	 */
-	private static function formatFileName (string $filePath): string {
+	private static function formatFileName(string $filePath): string
+	{
 		$orPath = dirname($filePath);
 		if ($orPath === '.') return '<b>'.$filePath.'</b>';
 		return $orPath.'<b>'.substr($filePath, strlen($orPath)).'</b>';
@@ -527,7 +557,8 @@ class Debugger {
 	 * @param int $num
 	 * @return float
 	 */
-	private static function formatMemory (int $num): float {
+	private static function formatMemory(int $num): float
+	{
 		return round($num / (1024 * 1024), 3);
 	}
 
@@ -537,7 +568,8 @@ class Debugger {
 	 * @param int $num
 	 * @return float
 	 */
-	private static function formatTime (float $time, int $num = 2): float {
+	private static function formatTime(float $time, int $num = 2): float
+	{
 		return round($time * 1000, $num);
 	}
 
@@ -546,7 +578,8 @@ class Debugger {
 	 * @param string $hash
 	 * @return bool
 	 */
-	private static function exceptionFileExists (string $hash): bool {
+	private static function exceptionFileExists(string $hash): bool
+	{
 		if (self::$dir) {
 			$list = scandir(self::$dir);
 			if (!empty($list)) {
